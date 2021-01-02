@@ -25,13 +25,17 @@ end
 
 class Controller
   attr_accessor :answer
+  attr_accessor :guesses
+  attr_accessor :turns_left
 
   def initialize
     @play_field = PlayField.new()
+    @guesses = []
+    @turns_left = 0
   end
 
   def update_play_field
-    @play_field.draw_field(answer)
+    @play_field.draw_field(answer, guesses, turns_left)
   end
 end
 
@@ -45,10 +49,9 @@ class FileController
     dictionary = File.readlines('5desk.txt')
     r = 1 + rand(dictionary.length)
     while dictionary[r].length < 7 or dictionary[r].length > 14
-      puts "Re-rolling"
       r = 1 + rand(dictionary.length)
     end
-    return dictionary[r].chomp
+    return dictionary[r].chomp.upcase
   end
 end
 
@@ -56,9 +59,30 @@ class PlayField
   def initialize
   end
 
-  def draw_field(answer)
+  def draw_field(answer, guesses, turns_left)
     puts "** #{answer} **"
+    string = create_string(answer, guesses)
+    puts "\n#{string}\n\n"
+    puts "Turns left: #{turns_left}\n\n"
+    guesses = guesses.sort.join(", ")
+    puts "You have guessed: #{guesses}\n\n"
   end
+
+  def create_string(answer, guesses)
+    answer = answer.split("")
+    letters_not_guessed = answer - guesses
+    answer.each_with_index do | a , i |
+      letters_not_guessed.each do | g |
+        if a == g
+          answer[i] = " __ "
+        else
+        end
+      end
+    end
+
+    return answer.join
+  end
+
 end
 
 puts "HANGMAN.rb Started..."
@@ -68,4 +92,9 @@ puts "HANGMAN.rb Ended..."
 
 
 # DONE - Read dictionary, pick random word w/ conditions, return to Controller
+# DONE - draw_field - length fo answer, draw underscores for each w/ spaces
+# DONE - Make sure guesses show up on screen
+  # each letter of answer
+    # each letter of guesses
+      # if == nothing else __
 #
