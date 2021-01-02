@@ -7,15 +7,20 @@ class Game
 
   def start_game
     puts "Game Begins!"
-    while @controller.turns_left > 0
-      @controller.answer = @file_controller.choose_answer
+    @controller.answer = @file_controller.choose_answer
+    while @controller.turns_left > 0 && @controller.winner == false
       @controller.update_play_field
       @controller.get_input
-      @controller.turns_left -= 1
     end
+    end_game
   end
 
   def end_game
+    if @controller.winner == false
+      puts "\nYOU LOSE!!!\n\n"
+    else
+      puts "\nYOU WIN!!!\n\n"
+    end
   end
 
   def save_game
@@ -30,11 +35,13 @@ class Controller
   attr_accessor :answer
   attr_accessor :guesses
   attr_accessor :turns_left
+  attr_accessor :winner
 
   def initialize
     @play_field = PlayField.new()
     @guesses = []
     @turns_left = 6
+    @winner = false
   end
 
   def get_input
@@ -46,12 +53,26 @@ class Controller
         input_accepted = true
       end
     end
-    @guesses.push(input)
-    @guesses = @guesses.uniq
+    check_match(input)
+    answer_array = @answer.split("")
+    if answer_array - @guesses == []
+      @winner = true
+    end
   end
 
   def update_play_field
     @play_field.draw_field(answer, guesses, turns_left)
+  end
+
+  def check_match(input)
+    if @guesses.include?(input)
+      @turns_left -= 1
+    elsif @answer.split("").include?(input)
+      @guesses.push(input)
+      @guesses = @guesses.uniq
+    else
+      @turns_left -= 1
+    end
   end
 end
 
@@ -76,7 +97,6 @@ class PlayField
   end
 
   def draw_field(answer, guesses, turns_left)
-    puts "** #{answer} **"
     string = create_string(answer, guesses)
     puts "\n#{string}\n\n"
     puts "Turns left: #{turns_left}\n\n"
