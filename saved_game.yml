@@ -1,0 +1,12 @@
+--- !ruby/object:Game
+controller: !ruby/object:Controller
+  play_field: !ruby/object:PlayField {}
+  guesses:
+  - E
+  - I
+  - O
+  turns_left: 4
+  winner: false
+  save_and_quit: false
+  answer: PIMENTO
+file_controller: !ruby/object:FileController {}

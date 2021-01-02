@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'yaml'
+
 # Main game loop
 class Game
   def initialize
@@ -7,46 +9,65 @@ class Game
     @file_controller = FileController.new
   end
 
-  def start_game
-    puts 'Game Begins!'
+  def start_new_game
     @controller.answer = @file_controller.choose_answer
+    game_loop
+  end
+
+  def game_loop
     while @controller.turns_left.positive? && @controller.winner == false
       @controller.update_play_field
       @controller.get_input
+      if @controller.save_and_quit == true
+        save_game
+        @controller.turns_left = 0
+      end
     end
+    @controller.update_play_field
     end_game
   end
 
   def end_game
-    if @controller.winner == false
+    if @controller.save_and_quit == true
+      puts "\nGAME SAVED"
+    elsif @controller.winner == false
       puts "\nYOU LOSE!!!\n\n"
-    else
-      puts "\nYOU WIN!!!\n\n"
+      puts "The Word was: #{@controller.answer}\n\n"
+    elsif puts "\nYOU WIN!!!\n\n"
     end
   end
 
-  def save_game; end
+  def save_game
+    @controller.save_and_quit = false
+    yaml_string = YAML.dump(self)
+    @controller.save_and_quit = true
+    @file_controller.write_config(yaml_string)
+  end
 
-  def load_game; end
+  def load_game
+    yaml_string = @file_controller.load_config
+    YAML.safe_load(yaml_string)
+  end
 end
 
 # Controls play field and game states
 class Controller
-  attr_accessor :answer, :guesses, :turns_left, :winner
+  attr_accessor :answer, :guesses, :turns_left, :winner, :save_and_quit
 
   def initialize
     @play_field = PlayField.new
     @guesses = []
     @turns_left = 6
     @winner = false
+    @save_and_quit = false
   end
 
   def get_input
-    puts 'Enter one letter as your guess: '
+    puts 'Enter one letter as your guess (or 0 to save and quit): '
     input_accepted = false
     while input_accepted == false
       input = gets.upcase.chomp
-      input_accepted = true if input.match(/[A-Z]/) && input.length == 1
+      input_accepted = true if (input.match(/[A-Z]/) && input.length == 1) || input == '0'
     end
     check_match(input)
     answer_array = @answer.split('')
@@ -63,6 +84,8 @@ class Controller
     elsif @answer.split('').include?(input)
       @guesses.push(input)
       @guesses = @guesses.uniq
+    elsif input == '0'
+      @save_and_quit = true
     else
       @turns_left -= 1
     end
@@ -71,8 +94,6 @@ end
 
 # Read/Writes files
 class FileController
-  attr_accessor :config_file
-
   def initialize; end
 
   def choose_answer
@@ -80,6 +101,17 @@ class FileController
     r = 1 + rand(dictionary.length)
     r = 1 + rand(dictionary.length) while (dictionary[r].length < 7) || (dictionary[r].length > 14)
     dictionary[r].chomp.upcase
+  end
+
+  def write_config(yaml_string)
+    config_file = File.open('saved_game.yml', 'w')
+    config_file.puts(yaml_string)
+    config_file.close
+  end
+
+  def load_config
+    file = File.open('saved_game.yml')
+    file.read
   end
 end
 
@@ -109,4 +141,13 @@ class PlayField
 end
 
 game = Game.new
-game.start_game
+
+if File.exist?('saved_game.yml')
+  puts 'Enter 0 to load game or anything else to start a new game'
+  if gets.chomp == '0'
+    game = game.load_game
+    game.game_loop
+  else
+    game.start_new_game
+  end
+end
