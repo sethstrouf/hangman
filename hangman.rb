@@ -7,9 +7,12 @@ class Game
 
   def start_game
     puts "Game Begins!"
-
-    @controller.answer = @file_controller.choose_answer
-    @controller.update_play_field
+    while @controller.turns_left > 0
+      @controller.answer = @file_controller.choose_answer
+      @controller.update_play_field
+      @controller.get_input
+      @controller.turns_left -= 1
+    end
   end
 
   def end_game
@@ -31,7 +34,20 @@ class Controller
   def initialize
     @play_field = PlayField.new()
     @guesses = []
-    @turns_left = 0
+    @turns_left = 6
+  end
+
+  def get_input
+    puts "Enter one letter as your guess: "
+    input_accepted = false
+    while input_accepted == false
+      input = gets.upcase.chomp
+      if input.match(/[A-Z]/) && input.length == 1
+        input_accepted = true
+      end
+    end
+    @guesses.push(input)
+    @guesses = @guesses.uniq
   end
 
   def update_play_field
@@ -85,11 +101,8 @@ class PlayField
 
 end
 
-puts "HANGMAN.rb Started..."
 game = Game.new()
 game.start_game
-puts "HANGMAN.rb Ended..."
-
 
 # DONE - Read dictionary, pick random word w/ conditions, return to Controller
 # DONE - draw_field - length fo answer, draw underscores for each w/ spaces
@@ -97,4 +110,4 @@ puts "HANGMAN.rb Ended..."
   # each letter of answer
     # each letter of guesses
       # if == nothing else __
-#
+# DONE - Input! - ask, turn to upcase, check it's a letter, turn--, update playfield
